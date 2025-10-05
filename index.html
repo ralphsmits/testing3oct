@@ -28,6 +28,18 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+.logo-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo {
+    max-width: 200px; /* adjust based on image proportions */
+    width: 40%;
+    height: auto;
+    display: inline-block;
+    border-radius: 8px; /* optional: soften edges */
+}
 
         h1 {
             text-align: center;
@@ -110,7 +122,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>Submit Your Project</h1>
+<div class="logo-container">
+    <img src="https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/cmdverselogo.png" alt="Project Submitter" class="logo">
+</div>
+
         <form id="projectForm">
             <div class="form-group">
                 <label for="projectName">Project Name *</label>
