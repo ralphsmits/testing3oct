@@ -15,20 +15,42 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       line-height: 1.6;
       color: #fff;
-      background:
-        linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-        url('https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/backdrop.png')
-        center center / cover no-repeat fixed;
-      padding: 40px 20px;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Background video setup */
+    #background-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+    }
+
+    /* Optional dark overlay for contrast */
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: -1;
     }
 
     .logo-container {
       text-align: center;
       margin-bottom: 40px;
+      z-index: 1;
     }
 
     .logo {
@@ -47,6 +69,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       backdrop-filter: blur(8px);
+      z-index: 1;
     }
 
     label {
@@ -123,6 +146,13 @@
 </head>
 <body>
 
+  <!-- Background video -->
+  <video autoplay muted loop id="background-video">
+    <source src="https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/backdrop.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <div id="overlay"></div>
+
   <!-- Logo Above Form -->
   <div class="logo-container">
     <img src="https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/cmdverselogo2.png" alt="Project Submitter" class="logo">
@@ -185,7 +215,6 @@
         this.form = document.getElementById('projectForm');
         this.messageEl = document.getElementById('message');
         this.submitBtn = document.getElementById('submitBtn');
-
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
       }
 
@@ -249,7 +278,7 @@
 
       setLoading(loading) {
         this.submitBtn.disabled = loading;
-        this.submitBtn.textContent = loading ? 'Submitting...' : 'Create Project';
+        this.submitBtn.textContent = loading ? 'Submitting...' : 'Submit Project';
       }
     }
 
