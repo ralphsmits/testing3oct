@@ -11,51 +11,52 @@
       box-sizing: border-box;
     }
 
+    /* Background video container */
+    #video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    #bgVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Fill screen without stretching */
+      filter: brightness(0.4); /* Darken video for readability */
+    }
+
+    /* Dark overlay to improve contrast */
+    #video-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: -1;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       line-height: 1.6;
       color: #fff;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
       padding: 40px 20px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Background video setup */
-    #background-video {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: -2;
-    }
-
-    /* Optional dark overlay for contrast */
-    #overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: -1;
+      display: block; /* restore normal flow for scrolling */
     }
 
     .logo-container {
       text-align: center;
       margin-bottom: 40px;
-      z-index: 1;
     }
 
     .logo {
-      max-width: 500px;
-      width: 80%;
+      max-width: 700px;
+      width: 90%;
       height: auto;
       display: inline-block;
       filter: drop-shadow(0 6px 12px rgba(0,0,0,0.7));
@@ -69,7 +70,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       backdrop-filter: blur(8px);
-      z-index: 1;
+      margin: 0 auto 100px auto; /* adds bottom spacing for scroll */
     }
 
     label {
@@ -146,12 +147,14 @@
 </head>
 <body>
 
-  <!-- Background video -->
-  <video autoplay muted loop id="background-video">
-    <source src="https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/backdrop.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-  <div id="overlay"></div>
+  <!-- Background Video -->
+  <div id="video-container">
+    <video autoplay muted loop id="bgVideo">
+      <source src="https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/backdrop.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+  <div id="video-overlay"></div>
 
   <!-- Logo Above Form -->
   <div class="logo-container">
@@ -215,6 +218,7 @@
         this.form = document.getElementById('projectForm');
         this.messageEl = document.getElementById('message');
         this.submitBtn = document.getElementById('submitBtn');
+
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
       }
 
@@ -227,19 +231,21 @@
           const formData = new FormData(this.form);
           const projectData = this.processFormData(formData);
 
-          // Example GitHub integration with embedded token
-          const ghpToken = "ghp_yourActualTokenHere"; // Replace with your actual token
-          const response = await fetch("https://api.github.com/repos/ralphsmits/testing3oct/contents/projects/" + encodeURIComponent(projectData.projectName) + ".json", {
-            method: "PUT",
-            headers: {
-              "Authorization": `token ${ghpToken}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              message: `Add project: ${projectData.projectName}`,
-              content: btoa(JSON.stringify(projectData, null, 2))
-            })
-          });
+          const ghpToken = "ghp_yourActualTokenHere"; // replace with your real token
+          const response = await fetch(
+            "https://api.github.com/repos/ralphsmits/testing3oct/contents/projects/" + encodeURIComponent(projectData.projectName) + ".json",
+            {
+              method: "PUT",
+              headers: {
+                "Authorization": `token ${ghpToken}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                message: `Add project: ${projectData.projectName}`,
+                content: btoa(JSON.stringify(projectData, null, 2))
+              })
+            }
+          );
 
           if (!response.ok) throw new Error('GitHub submission failed');
 
