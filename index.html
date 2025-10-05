@@ -1,379 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Submitter</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Submitter</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: url('https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/backdrop.png');
-            background-size: cover;
-            padding: 20px;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #fff;
+      background: 
+        linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+        url('https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/backdrop.png')
+        center center / cover no-repeat fixed;
+      padding: 20px;
+      min-height: 100vh;
+    }
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-.logo-container {
-    text-align: center;
-    margin-bottom: 30px;
-}
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: rgba(20, 20, 20, 0.9);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+    }
 
-.logo {
-    max-width: 200px; /* adjust based on image proportions */
-    width: 40%;
-    height: auto;
-    display: inline-block;
-    border-radius: 8px; /* optional: soften edges */
-}
+    .logo-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #24292e;
-        }
+    .logo {
+      max-width: 400px; /* larger logo */
+      width: 80%;
+      height: auto;
+      display: inline-block;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+    }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #eee;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      font-size: 14px;
+      background: #1f1f1f;
+      color: #fff;
+    }
 
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d1d5da;
-            border-radius: 4px;
-            font-size: 14px;
-        }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #4ea1ff;
+      box-shadow: 0 0 0 3px rgba(78, 161, 255, 0.3);
+    }
 
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #0366d6;
-            box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.3);
-        }
+    small {
+      display: block;
+      margin-top: 5px;
+      color: #aaa;
+      font-size: 12px;
+    }
 
-        small {
-            display: block;
-            margin-top: 5px;
-            color: #6a737d;
-            font-size: 12px;
-        }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #4ea44f;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #2ea44f;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
+    button:hover {
+      background: #3e8e41;
+    }
 
-        button:hover {
-            background: #2c974b;
-        }
+    button:disabled {
+      background: #7fbf80;
+      cursor: not-allowed;
+    }
 
-        button:disabled {
-            background: #94d3a2;
-            cursor: not-allowed;
-        }
+    .message {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
 
-        .message {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
-            display: none;
-        }
+    .message.success {
+      background: #204f26;
+      color: #b4f5c3;
+      border: 1px solid #4ea44f;
+    }
 
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-    </style>
+    .message.error {
+      background: #4f2020;
+      color: #f5b4b4;
+      border: 1px solid #a44e4e;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-<div class="logo-container">
-    <img src="https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/cmdverselogo.png" alt="Project Submitter" class="logo">
-</div>
-
-        <form id="projectForm">
-            <div class="form-group">
-                <label for="projectName">Project Name *</label>
-                <input type="text" id="projectName" name="projectName" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="creators">Creators (comma separated) *</label>
-                <input type="text" id="creators" name="creators" placeholder="Ava Janssen, Rik de Boer" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="description">Description *</label>
-                <textarea id="description" name="description" rows="4" required></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="tags">Tags (comma separated) *</label>
-                <input type="text" id="tags" name="tags" placeholder="Tech, interaction, sensors" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="category">Category *</label>
-                <select id="category" name="category" required>
-                    <option value="">Select a category</option>
-                    <option value="Tech">Tech</option>
-                    <option value="Design">Design</option>
-                    <option value="Art">Art</option>
-                    <option value="Research">Research</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="year">Year *</label>
-                <input type="date" id="year" name="year" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="imageFile">Project Thumbnail *</label>
-                <input type="file" id="imageFile" name="imageFile" accept="image/png, image/jpeg, image/jpg" required>
-                <small>PNG or JPG, max 2MB</small>
-            </div>
-            
-            <div class="form-group">
-                <label for="githubToken">GitHub Personal Access Token *</label>
-                <input type="password" id="githubToken" name="githubToken" 
-                       placeholder="ghp_..." required>
-                <small><a href="https://github.com/settings/tokens" target="_blank">Create token here</a> (need repo scope)</small>
-            </div>
-            
-            <button type="submit" id="submitBtn">Create Project</button>
-        </form>
-        
-        <div id="message" class="message"></div>
+  <div class="container">
+    <div class="logo-container">
+      <img src="https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/header-logo.png" alt="Project Submitter" class="logo">
     </div>
-    
-    <script>
-        class ProjectSubmitter {
-            constructor() {
-                this.form = document.getElementById('projectForm');
-                this.messageEl = document.getElementById('message');
-                this.submitBtn = document.getElementById('submitBtn');
-                
-                this.form.addEventListener('submit', (e) => this.handleSubmit(e));
-            }
 
-            async handleSubmit(e) {
-                e.preventDefault();
-                this.setMessage('', '');
-                this.setLoading(true);
+    <form id="projectForm">
+      <div class="form-group">
+        <label for="projectName">Project Name *</label>
+        <input type="text" id="projectName" name="projectName" required>
+      </div>
 
-                try {
-                    const formData = new FormData(this.form);
-                    const projectData = this.processFormData(formData);
-                    
-                    // First test the token
-                    await this.testGitHubToken(projectData.githubToken);
-                    
-                    // Then create the project
-                    await this.createProjectOnGitHub(projectData);
-                    this.setMessage('Project created successfully!', 'success');
-                    this.form.reset();
-                } catch (error) {
-                    this.setMessage(`Error: ${error.message}`, 'error');
-                    console.error('Submission error:', error);
-                } finally {
-                    this.setLoading(false);
-                }
-            }
+      <div class="form-group">
+        <label for="creators">Creators (comma separated) *</label>
+        <input type="text" id="creators" name="creators" placeholder="Ava Janssen, Rik de Boer" required>
+      </div>
 
-            processFormData(formData) {
-                const creators = formData.get('creators').split(',').map(name => name.trim());
-                const tags = formData.get('tags').split(',').map(tag => tag.trim());
-                
-                return {
-                    projectName: formData.get('projectName'),
-                    creators: creators,
-                    description: formData.get('description'),
-                    tags: tags,
-                    category: formData.get('category'),
-                    year: formData.get('year'),
-                    imageFile: formData.get('imageFile'),
-                    githubToken: formData.get('githubToken')
-                };
-            }
+      <div class="form-group">
+        <label for="description">Description *</label>
+        <textarea id="description" name="description" rows="4" required></textarea>
+      </div>
 
-            async testGitHubToken(token) {
-                try {
-                    const response = await fetch('https://api.github.com/user', {
-                        headers: {
-                            'Authorization': `token ${token}`
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('Token is invalid or has insufficient permissions');
-                    }
-                    
-                    const userData = await response.json();
-                    console.log('Token works for user:', userData.login);
-                    return true;
-                } catch (error) {
-                    throw new Error(`Token test failed: ${error.message}`);
-                }
-            }
+      <div class="form-group">
+        <label for="tags">Tags (comma separated) *</label>
+        <input type="text" id="tags" name="tags" placeholder="Tech, interaction, sensors" required>
+      </div>
 
-            async createProjectOnGitHub(projectData) {
-                const { githubToken, imageFile, ...metadata } = projectData;
-                
-                // Process image file
-                const imageBase64 = await this.fileToBase64(imageFile);
-                
-                // Create metadata with proper structure
-                const metadataContent = {
-                    projectName: metadata.projectName,
-                    creators: metadata.creators,
-                    description: metadata.description,
-                    tags: metadata.tags,
-                    category: metadata.category,
-                    year: metadata.year,
-                    imageFile: "thumbnail.png"
-                };
+      <div class="form-group">
+        <label for="category">Category *</label>
+        <select id="category" name="category" required>
+          <option value="">Select a category</option>
+          <option value="Human">Human</option>
+          <option value="Void">Void</option>
+          <option value="Tech">Tech</option>
+          <option value="Story">Story</option>
+        </select>
+      </div>
 
-                // Sanitize project name for folder
-                const folderName = this.sanitizeFolderName(metadata.projectName);
-                
-                // Create folder and files on GitHub
-                await this.createGitHubFile(
-                    githubToken, 
-                    `${folderName}/metadata.json`,
-                    JSON.stringify(metadataContent, null, 2),
-                    false // not an image
-                );
+      <div class="form-group">
+        <label for="year">Year *</label>
+        <input type="number" id="year" name="year" min="2000" max="2030" placeholder="2025" required>
+      </div>
 
-                await this.createGitHubFile(
-                    githubToken,
-                    `${folderName}/thumbnail.png`,
-                    imageBase64,
-                    true // is an image
-                );
-            }
+      <div class="form-group">
+        <label for="imageFile">Project Thumbnail *</label>
+        <input type="file" id="imageFile" name="imageFile" accept="image/png, image/jpeg, image/jpg" required>
+        <small>PNG or JPG, max 2MB</small>
+      </div>
 
-            async createGitHubFile(token, path, content, isImage = false) {
-                try {
-                    let base64Content;
-                    
-                    if (isImage) {
-                        // Remove the data URL prefix for images
-                        base64Content = content.split(',')[1];
-                    } else {
-                        // For text files, use proper base64 encoding
-                        base64Content = btoa(unescape(encodeURIComponent(content)));
-                    }
+      <button type="submit" id="submitBtn">Create Project</button>
+    </form>
 
-                    const response = await fetch(
-                        `https://api.github.com/repos/ralphsmits/testing3oct/contents/${path}`, 
-                        {
-                            method: 'PUT',
-                            headers: {
-                                'Authorization': `token ${token}`,
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                message: `Add project: ${path.split('/')[0]}`,
-                                content: base64Content,
-                                branch: 'main'
-                            })
-                        }
-                    );
+    <div id="message" class="message"></div>
+  </div>
 
-                    const responseData = await response.json();
-                    
-                    if (!response.ok) {
-                        if (response.status === 401) {
-                            throw new Error('Invalid token - check token permissions');
-                        } else if (response.status === 403) {
-                            throw new Error('Token missing required scopes (need repo or public_repo)');
-                        } else if (response.status === 404) {
-                            throw new Error('Repository not found - check username/repo name');
-                        } else {
-                            throw new Error(`GitHub API error: ${response.status} - ${responseData.message}`);
-                        }
-                    }
+  <script>
+    class ProjectSubmitter {
+      constructor() {
+        this.form = document.getElementById('projectForm');
+        this.messageEl = document.getElementById('message');
+        this.submitBtn = document.getElementById('submitBtn');
 
-                    return responseData;
-                } catch (error) {
-                    throw new Error(`Network error: ${error.message}`);
-                }
-            }
+        this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+      }
 
-            fileToBase64(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = error => reject(error);
-                });
-            }
+      async handleSubmit(e) {
+        e.preventDefault();
+        this.setMessage('', '');
+        this.setLoading(true);
 
-            sanitizeFolderName(name) {
-                return name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]/g, '-')
-                    .replace(/-+/g, '-')
-                    .replace(/^-|-$/g, '');
-            }
+        try {
+          const formData = new FormData(this.form);
+          const projectData = this.processFormData(formData);
 
-            setMessage(text, type) {
-                if (!text) {
-                    this.messageEl.style.display = 'none';
-                    return;
-                }
-                
-                this.messageEl.textContent = text;
-                this.messageEl.className = `message ${type}`;
-                this.messageEl.style.display = 'block';
-            }
+          // Send to backend (which securely holds the GitHub token)
+          const response = await fetch('/submit', {
+            method: 'POST',
+            body: JSON.stringify(projectData),
+            headers: { 'Content-Type': 'application/json' }
+          });
 
-            setLoading(loading) {
-                this.submitBtn.disabled = loading;
-                this.submitBtn.textContent = loading ? 'Creating Project...' : 'Create Project';
-            }
+          if (!response.ok) throw new Error('Submission failed on server');
+
+          this.setMessage('Project submitted successfully!', 'success');
+          this.form.reset();
+        } catch (error) {
+          this.setMessage(`Error: ${error.message}`, 'error');
+          console.error('Submission error:', error);
+        } finally {
+          this.setLoading(false);
         }
+      }
 
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            new ProjectSubmitter();
-        });
-    </script>
+      processFormData(formData) {
+        const creators = formData.get('creators').split(',').map(n => n.trim());
+        const tags = formData.get('tags').split(',').map(t => t.trim());
+        return {
+          projectName: formData.get('projectName'),
+          creators,
+          description: formData.get('description'),
+          tags,
+          category: formData.get('category'),
+          year: formData.get('year')
+        };
+      }
+
+      setMessage(text, type) {
+        if (!text) {
+          this.messageEl.style.display = 'none';
+          return;
+        }
+        this.messageEl.textContent = text;
+        this.messageEl.className = `message ${type}`;
+        this.messageEl.style.display = 'block';
+      }
+
+      setLoading(loading) {
+        this.submitBtn.disabled = loading;
+        this.submitBtn.textContent = loading ? 'Submitting...' : 'Create Project';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => new ProjectSubmitter());
+  </script>
 </body>
 </html>
