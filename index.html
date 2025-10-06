@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project Submitter</title>
   <style>
-    /* Your existing CSS remains the same */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
+    /* Background video container */
     #video-container {
       position: fixed;
       top: 0;
@@ -25,16 +25,15 @@
     #bgVideo {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: cover; /* Fill screen without stretching */
     }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       line-height: 1.6;
       color: #fff;
       min-height: 100vh;
       padding: 40px 20px;
-      display: block;
+      display: block; /* restore normal flow for scrolling */
     }
 
     .logo-container {
@@ -58,7 +57,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       backdrop-filter: blur(8px);
-      margin: 0 auto 100px auto;
+      margin: 0 auto 100px auto; /* adds bottom spacing for scroll */
     }
 
     label {
@@ -76,12 +75,6 @@
       font-size: 14px;
       background: #1f1f1f;
       color: #fff;
-    }
-
-    textarea {
-      resize: vertical;
-      max-width: 100%;
-      box-sizing: border-box;
     }
 
     input:focus, textarea:focus, select:focus {
@@ -137,14 +130,6 @@
       color: #f5b4b4;
       border: 1px solid #a44e4e;
     }
-
-    .config-info {
-      background: rgba(255,255,255,0.1);
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      font-size: 14px;
-    }
   </style>
 </head>
 <body>
@@ -156,6 +141,7 @@
       Your browser does not support the video tag.
     </video>
   </div>
+  <div id="video-overlay"></div>
 
   <!-- Logo Above Form -->
   <div class="logo-container">
@@ -164,12 +150,6 @@
 
   <!-- Dark Form Container -->
   <div class="container">
-    <div class="config-info">
-      <strong>Current Configuration:</strong><br>
-      JSON Repository: <span id="jsonRepoInfo">loading...</span><br>
-      Images Repository: <span id="imagesRepoInfo">loading...</span>
-    </div>
-
     <form id="projectForm">
       <div class="form-group">
         <label for="projectName">Project Name *</label>
@@ -226,176 +206,43 @@
         this.messageEl = document.getElementById('message');
         this.submitBtn = document.getElementById('submitBtn');
 
-        // Configuration - UPDATE THESE VALUES
-        this.jsonRepo = {
-          owner: "cmdverse",        // Replace with target repo owner for JSON
-          repo: "cmdverse",        // Replace with target repo name for JSON
-          path: "hold/"           // Path for JSON files
-        };
-        
-        this.imagesRepo = {
-          owner: "cmdverse",        // Replace with target repo owner for images
-          repo: "cmdverse",        // Replace with target repo name for images  
-          path: "hold/"             // Path for images
-        };
-
-        // IMPORTANT: Replace with your actual GitHub token
-        // Get this from: GitHub Settings → Developer settings → Personal access tokens
-        this.ghToken = "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"; // ← REPLACE THIS
-
-        this.displayConfig();
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
-        
-        // Test token on load
-        this.testToken();
-      }
-
-      displayConfig() {
-        document.getElementById('jsonRepoInfo').textContent = 
-          `${this.jsonRepo.owner}/${this.jsonRepo.repo}/${this.jsonRepo.path}`;
-        document.getElementById('imagesRepoInfo').textContent = 
-          `${this.imagesRepo.owner}/${this.imagesRepo.repo}/${this.imagesRepo.path}`;
-      }
-
-      async testToken() {
-        if (!this.ghToken || this.ghToken === "ghp_yourActualTokenHere") {
-          this.setMessage('Please set your GitHub token in the code!', 'error');
-          return;
-        }
-
-        try {
-          // Test access to JSON repo
-          const response = await fetch(
-            `https://api.github.com/repos/${this.jsonRepo.owner}/${this.jsonRepo.repo}`,
-            {
-              headers: {
-                "Authorization": `token ${this.ghToken}`,
-                "Accept": "application/vnd.github.v3+json"
-              }
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error(`Cannot access repository: ${response.status} ${response.statusText}`);
-          }
-
-          console.log('Token test passed');
-        } catch (error) {
-          this.setMessage(`Configuration error: ${error.message}`, 'error');
-        }
       }
 
       async handleSubmit(e) {
         e.preventDefault();
         this.setMessage('', '');
-        
-        // Validate token first
-        if (!this.ghToken || this.ghToken === "ghp_yourActualTokenHere") {
-          this.setMessage('Error: GitHub token not configured. Please update the ghToken variable.', 'error');
-          return;
-        }
-
         this.setLoading(true);
 
         try {
           const formData = new FormData(this.form);
           const projectData = this.processFormData(formData);
-          const imageFile = document.getElementById('imageFile').files[0];
 
-          // Validate file size (2MB max)
-          if (imageFile.size > 2 * 1024 * 1024) {
-            throw new Error('Image file size exceeds 2MB limit');
-          }
+          const ghpToken = "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"; // replace with your real token
+          const response = await fetch(
+            "https://api.github.com/repos/cmdverse/cmdverse/contents/hold" + encodeURIComponent(projectData.projectName) + ".json",
+            {
+              method: "PUT",
+              headers: {
+                "Authorization": `token ${ghpToken}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                message: `Add project: ${projectData.projectName}`,
+                content: btoa(JSON.stringify(projectData, null, 2))
+              })
+            }
+          );
 
-          console.log('Starting image upload...');
-          const imageUrl = await this.uploadImage(projectData.projectName, imageFile);
-          console.log('Image uploaded:', imageUrl);
-          
-          // Add image URL to project data
-          projectData.imageUrl = imageUrl;
-
-          console.log('Starting JSON upload...');
-          await this.uploadJson(projectData);
-          console.log('JSON uploaded successfully');
+          if (!response.ok) throw new Error('GitHub submission failed');
 
           this.setMessage('Project submitted successfully!', 'success');
           this.form.reset();
         } catch (error) {
+          this.setMessage(`Error: ${error.message}`, 'error');
           console.error('Submission error:', error);
-          let errorMessage = error.message;
-          
-          // Provide more user-friendly error messages
-          if (errorMessage.includes('Bad credentials')) {
-            errorMessage = 'Invalid GitHub token. Please check your token and try again.';
-          } else if (errorMessage.includes('Not Found')) {
-            errorMessage = 'Repository not found. Please check repository names and permissions.';
-          } else if (errorMessage.includes('API rate limit exceeded')) {
-            errorMessage = 'GitHub API rate limit exceeded. Please try again later.';
-          }
-          
-          this.setMessage(`Error: ${errorMessage}`, 'error');
         } finally {
           this.setLoading(false);
-        }
-      }
-
-      async uploadImage(projectName, imageFile) {
-        const fileName = this.sanitizeFileName(projectName) + '.' + this.getFileExtension(imageFile.name);
-        const path = this.imagesRepo.path + fileName;
-        
-        // Convert image to base64
-        const base64Image = await this.fileToBase64(imageFile);
-        
-        const response = await fetch(
-          `https://api.github.com/repos/${this.imagesRepo.owner}/${this.imagesRepo.repo}/contents/${path}`,
-          {
-            method: "PUT",
-            headers: {
-              "Authorization": `token ${this.ghToken}`,
-              "Content-Type": "application/json",
-              "Accept": "application/vnd.github.v3+json"
-            },
-            body: JSON.stringify({
-              message: `Add image for project: ${projectName}`,
-              content: base64Image.split(',')[1] // Remove data URL prefix
-            })
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Image upload error details:', errorData);
-          throw new Error(`Image upload failed: ${errorData.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        return result.content.download_url;
-      }
-
-      async uploadJson(projectData) {
-        const fileName = this.sanitizeFileName(projectData.projectName) + '.json';
-        const path = this.jsonRepo.path + fileName;
-        
-        const response = await fetch(
-          `https://api.github.com/repos/${this.jsonRepo.owner}/${this.jsonRepo.repo}/contents/${path}`,
-          {
-            method: "PUT",
-            headers: {
-              "Authorization": `token ${this.ghToken}`,
-              "Content-Type": "application/json",
-              "Accept": "application/vnd.github.v3+json"
-            },
-            body: JSON.stringify({
-              message: `Add project: ${projectData.projectName}`,
-              content: btoa(JSON.stringify(projectData, null, 2))
-            })
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('JSON upload error details:', errorData);
-          throw new Error(`JSON upload failed: ${errorData.message || 'Unknown error'}`);
         }
       }
 
@@ -408,29 +255,8 @@
           description: formData.get('description'),
           tags,
           category: formData.get('category'),
-          year: parseInt(formData.get('year'))
+          year: formData.get('year')
         };
-      }
-
-      sanitizeFileName(name) {
-        return name
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-|-$/g, '');
-      }
-
-      getFileExtension(filename) {
-        return filename.split('.').pop().toLowerCase();
-      }
-
-      fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = error => reject(error);
-        });
       }
 
       setMessage(text, type) {
