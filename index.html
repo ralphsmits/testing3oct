@@ -25,15 +25,16 @@
     #bgVideo {
       width: 100%;
       height: 100%;
-      object-fit: cover; /* Fill screen without stretching */
+      object-fit: cover;
     }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       line-height: 1.6;
       color: #fff;
       min-height: 100vh;
       padding: 40px 20px;
-      display: block; /* restore normal flow for scrolling */
+      display: block;
     }
 
     .logo-container {
@@ -57,7 +58,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       backdrop-filter: blur(8px);
-      margin: 0 auto 100px auto; /* adds bottom spacing for scroll */
+      margin: 0 auto 100px auto;
     }
 
     label {
@@ -130,6 +131,14 @@
       color: #f5b4b4;
       border: 1px solid #a44e4e;
     }
+
+    .config-info {
+      background: rgba(255,255,255,0.1);
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -141,7 +150,6 @@
       Your browser does not support the video tag.
     </video>
   </div>
-  <div id="video-overlay"></div>
 
   <!-- Logo Above Form -->
   <div class="logo-container">
@@ -150,6 +158,12 @@
 
   <!-- Dark Form Container -->
   <div class="container">
+    <div class="config-info">
+      <strong>Target Repository:</strong> cmdverse/cmdverse<br>
+      <strong>JSON Path:</strong> hold/projects/<br>
+      <strong>Images Path:</strong> hold/images/
+    </div>
+
     <form id="projectForm">
       <div class="form-group">
         <label for="projectName">Project Name *</label>
@@ -206,7 +220,51 @@
         this.messageEl = document.getElementById('message');
         this.submitBtn = document.getElementById('submitBtn');
 
+        // Configuration for target repository
+        this.targetRepo = {
+          owner: "cmdverse",
+          repo: "cmdverse", 
+          jsonPath: "hold",  // JSON files will go here
+          imagesPath: "hold"   // Images will go here
+        };
+
+        // SECURITY WARNING: Tokens in client-side code can be stolen
+        // For production, use a backend server
+        this.ghToken = "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";
+
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+        
+        // Test configuration on load
+        this.testConfiguration();
+      }
+
+      async testConfiguration() {
+        if (!this.ghToken || this.ghToken.includes("yourActualTokenHere")) {
+          this.setMessage('❌ GitHub token not configured properly', 'error');
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `https://api.github.com/repos/${this.targetRepo.owner}/${this.targetRepo.repo}`,
+            {
+              headers: {
+                "Authorization": `token ${this.ghToken}`,
+                "Accept": "application/vnd.github.v3+json"
+              }
+            }
+          );
+
+          if (response.ok) {
+            this.setMessage('✅ Connected to repository successfully', 'success');
+            setTimeout(() => this.setMessage('', ''), 3000);
+          } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `HTTP ${response.status}`);
+          }
+        } catch (error) {
+          this.setMessage(`❌ Configuration error: ${error.message}`, 'error');
+        }
       }
 
       async handleSubmit(e) {
@@ -217,32 +275,87 @@
         try {
           const formData = new FormData(this.form);
           const projectData = this.processFormData(formData);
+          const imageFile = document.getElementById('imageFile').files[0];
 
-          const ghpToken = "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"; // replace with your real token
-          const response = await fetch(
-            "https://api.github.com/repos/cmdverse/cmdverse/contents/hold" + encodeURIComponent(projectData.projectName) + ".json",
-            {
-              method: "PUT",
-              headers: {
-                "Authorization": `token ${ghpToken}`,
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                message: `Add project: ${projectData.projectName}`,
-                content: btoa(JSON.stringify(projectData, null, 2))
-              })
-            }
-          );
+          // Validate file size
+          if (imageFile.size > 2 * 1024 * 1024) {
+            throw new Error('Image file size exceeds 2MB limit');
+          }
 
-          if (!response.ok) throw new Error('GitHub submission failed');
+          // Upload image first
+          const imageUrl = await this.uploadImage(projectData.projectName, imageFile);
+          
+          // Add image URL to project data
+          projectData.imageUrl = imageUrl;
 
-          this.setMessage('Project submitted successfully!', 'success');
+          // Upload JSON data
+          await this.uploadJson(projectData);
+
+          this.setMessage('✅ Project submitted successfully!', 'success');
           this.form.reset();
         } catch (error) {
-          this.setMessage(`Error: ${error.message}`, 'error');
           console.error('Submission error:', error);
+          this.setMessage(`❌ Error: ${error.message}`, 'error');
         } finally {
           this.setLoading(false);
+        }
+      }
+
+      async uploadImage(projectName, imageFile) {
+        const fileName = this.sanitizeFileName(projectName) + '.' + this.getFileExtension(imageFile.name);
+        const path = this.targetRepo.imagesPath + fileName;
+        
+        // Convert image to base64
+        const base64Image = await this.fileToBase64(imageFile);
+        
+        const response = await fetch(
+          `https://api.github.com/repos/${this.targetRepo.owner}/${this.targetRepo.repo}/contents/${path}`,
+          {
+            method: "PUT",
+            headers: {
+              "Authorization": `token ${this.ghToken}`,
+              "Content-Type": "application/json",
+              "Accept": "application/vnd.github.v3+json"
+            },
+            body: JSON.stringify({
+              message: `Add image for project: ${projectName}`,
+              content: base64Image.split(',')[1] // Remove data URL prefix
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Image upload failed: ${errorData.message || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        return result.content.download_url;
+      }
+
+      async uploadJson(projectData) {
+        const fileName = this.sanitizeFileName(projectData.projectName) + '.json';
+        const path = this.targetRepo.jsonPath + fileName;
+        
+        const response = await fetch(
+          `https://api.github.com/repos/${this.targetRepo.owner}/${this.targetRepo.repo}/contents/${path}`,
+          {
+            method: "PUT",
+            headers: {
+              "Authorization": `token ${this.ghToken}`,
+              "Content-Type": "application/json",
+              "Accept": "application/vnd.github.v3+json"
+            },
+            body: JSON.stringify({
+              message: `Add project: ${projectData.projectName}`,
+              content: btoa(JSON.stringify(projectData, null, 2))
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`JSON upload failed: ${errorData.message || 'Unknown error'}`);
         }
       }
 
@@ -255,8 +368,29 @@
           description: formData.get('description'),
           tags,
           category: formData.get('category'),
-          year: formData.get('year')
+          year: parseInt(formData.get('year'))
         };
+      }
+
+      sanitizeFileName(name) {
+        return name
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '');
+      }
+
+      getFileExtension(filename) {
+        return filename.split('.').pop().toLowerCase();
+      }
+
+      fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
       }
 
       setMessage(text, type) {
