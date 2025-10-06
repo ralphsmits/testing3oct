@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project Submitter</title>
   <style>
+    /* Your existing CSS remains the same */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
-    /* Background video container */
     #video-container {
       position: fixed;
       top: 0;
@@ -25,7 +25,7 @@
     #bgVideo {
       width: 100%;
       height: 100%;
-      object-fit: cover; /* Fill screen without stretching */
+      object-fit: cover;
     }
     
     body {
@@ -34,7 +34,7 @@
       color: #fff;
       min-height: 100vh;
       padding: 40px 20px;
-      display: block; /* restore normal flow for scrolling */
+      display: block;
     }
 
     .logo-container {
@@ -58,7 +58,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       backdrop-filter: blur(8px);
-      margin: 0 auto 100px auto; /* adds bottom spacing for scroll */
+      margin: 0 auto 100px auto;
     }
 
     .form-group {
@@ -135,6 +135,10 @@
       color: #f5b4b4;
       border: 1px solid #a44e4e;
     }
+
+    .token-input {
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 <body>
@@ -154,6 +158,12 @@
 
   <!-- Dark Form Container -->
   <div class="container">
+    <div class="form-group token-input">
+      <label for="githubToken">GitHub Token *</label>
+      <input type="password" id="githubToken" name="githubToken" placeholder="Enter your GitHub Personal Access Token" required>
+      <small>Get this from GitHub Settings → Developer settings → Personal access tokens</small>
+    </div>
+
     <form id="projectForm">
       <div class="form-group">
         <label for="projectName">Project Name *</label>
@@ -209,7 +219,13 @@
         this.form = document.getElementById('projectForm');
         this.messageEl = document.getElementById('message');
         this.submitBtn = document.getElementById('submitBtn');
-        this.ghpToken = "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"; // Replace with your actual token
+        this.tokenInput = document.getElementById('githubToken');
+        
+        // Check for stored token
+        const storedToken = localStorage.getItem('githubToken');
+        if (storedToken) {
+          this.tokenInput.value = storedToken;
+        }
 
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
       }
@@ -220,6 +236,14 @@
         this.setLoading(true);
 
         try {
+          const token = this.tokenInput.value.trim();
+          if (!token) {
+            throw new Error('GitHub token is required');
+          }
+
+          // Store token for future use
+          localStorage.setItem('githubToken', token);
+
           const formData = new FormData(this.form);
           const projectData = this.processFormData(formData);
           const imageFile = document.getElementById('imageFile').files[0];
@@ -229,15 +253,18 @@
             throw new Error('Image file size exceeds 2MB limit');
           }
 
+          // Test token first
+          await this.testToken(token);
+
           // Upload image first
           let imageUrl = '';
           if (imageFile) {
-            imageUrl = await this.uploadImage(projectData.projectName, imageFile);
+            imageUrl = await this.uploadImage(projectData.projectName, imageFile, token);
             projectData.imageUrl = imageUrl;
           }
 
           // Upload JSON data
-          await this.uploadJSON(projectData);
+          await this.uploadJSON(projectData, token);
 
           this.setMessage('Project submitted successfully!', 'success');
           this.form.reset();
@@ -249,17 +276,43 @@
         }
       }
 
-      async uploadImage(projectName, imageFile) {
-        const fileName = projectName.toLowerCase().replace(/\s+/g, '-') + '.' + imageFile.name.split('.').pop();
+      async testToken(token) {
+        const response = await fetch(
+          'https://api.github.com/user',
+          {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          }
+        );
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Invalid GitHub token. Please check your token and try again.');
+          }
+          throw new Error(`Token validation failed: ${response.status}`);
+        }
+
+        const userData = await response.json();
+        console.log('Authenticated as:', userData.login);
+        return userData;
+      }
+
+      async uploadImage(projectName, imageFile, token) {
+        const fileName = this.sanitizeFileName(projectName) + '.' + imageFile.name.split('.').pop();
         const imagePath = `projects/images/${fileName}`;
+        
+        console.log('Uploading image to:', imagePath);
         
         const response = await fetch(
           `https://api.github.com/repos/cmdverse/cmdverse/contents/${imagePath}`,
           {
             method: "PUT",
             headers: {
-              "Authorization": `token ${this.ghpToken}`,
-              "Content-Type": "application/json"
+              "Authorization": `token ${token}`,
+              "Content-Type": "application/json",
+              "Accept": "application/vnd.github.v3+json"
             },
             body: JSON.stringify({
               message: `Add image for project: ${projectName}`,
@@ -270,23 +323,29 @@
 
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('Image upload error details:', errorData);
           throw new Error(`Image upload failed: ${errorData.message || 'Unknown error'}`);
         }
 
         const result = await response.json();
+        console.log('Image upload successful:', result.content.download_url);
         return result.content.download_url;
       }
 
-      async uploadJSON(projectData) {
-        const jsonPath = `projects/data/${projectData.projectName.toLowerCase().replace(/\s+/g, '-')}.json`;
+      async uploadJSON(projectData, token) {
+        const fileName = this.sanitizeFileName(projectData.projectName) + '.json';
+        const jsonPath = `projects/data/${fileName}`;
+        
+        console.log('Uploading JSON to:', jsonPath);
         
         const response = await fetch(
           `https://api.github.com/repos/cmdverse/cmdverse/contents/${jsonPath}`,
           {
             method: "PUT",
             headers: {
-              "Authorization": `token ${this.ghpToken}`,
-              "Content-Type": "application/json"
+              "Authorization": `token ${token}`,
+              "Content-Type": "application/json",
+              "Accept": "application/vnd.github.v3+json"
             },
             body: JSON.stringify({
               message: `Add project: ${projectData.projectName}`,
@@ -297,22 +356,37 @@
 
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('JSON upload error details:', errorData);
           throw new Error(`JSON upload failed: ${errorData.message || 'Unknown error'}`);
         }
 
-        return await response.json();
+        const result = await response.json();
+        console.log('JSON upload successful');
+        return result;
+      }
+
+      sanitizeFileName(name) {
+        return name.toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '')
+          .substring(0, 50); // Limit length
       }
 
       processFormData(formData) {
-        const creators = formData.get('creators').split(',').map(n => n.trim());
-        const tags = formData.get('tags').split(',').map(t => t.trim());
+        const creators = formData.get('creators').split(',').map(n => n.trim()).filter(n => n);
+        const tags = formData.get('tags').split(',').map(t => t.trim()).filter(t => t);
+        
+        if (creators.length === 0) throw new Error('At least one creator is required');
+        if (tags.length === 0) throw new Error('At least one tag is required');
+        
         return {
           projectName: formData.get('projectName'),
           creators,
           description: formData.get('description'),
           tags,
           category: formData.get('category'),
-          year: parseInt(formData.get('year'))
+          year: parseInt(formData.get('year')),
+          submittedAt: new Date().toISOString()
         };
       }
 
@@ -321,7 +395,6 @@
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = () => {
-            // Remove the data:image/...;base64, prefix
             const base64 = reader.result.split(',')[1];
             resolve(base64);
           };
